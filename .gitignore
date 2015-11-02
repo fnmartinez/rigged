@@ -7,6 +7,10 @@
 target/
 *.class
 
+#Autogen files
+src-gen/
+src/main/generated-sources/
+
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
