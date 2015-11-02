@@ -1,0 +1,49 @@
+package ar.edu.itba.^it.sma.rigged.sarl
+
+import ar.edu.itba.^it.sma.rigged.sarl.support.Desire
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Initialize
+import io.sarl.util.Scopes
+import java.util.HashMap
+import java.util.LinkedList
+import java.util.List
+import io.sarl.core.Logging
+
+agent VoterAgent {
+	uses DefaultContextInteractions, Logging
+	val desires = new LinkedList<Desire>()
+	val candidateOpinions = new HashMap<CandidateAgent, Integer>()
+	var name : String
+	var wantedCandidate : CandidateAgent
+	var wantedCandidateScore : int
+	
+	on Initialize [ 
+		!occurrence.parameters.empty && 
+		occurrence.parameters.length == 2
+	] {
+		name = occurrence.parameters.get(0) as String
+		desires.addAll(occurrence.parameters.get(1) as List<Desire>)
+		println("Hi! I'm " + name + "!")
+	}
+	
+	on PopularOpinionEvent {
+		for (candidate : occurrence.candidates) {
+			var proposal = candidate.history.last
+			var score = 0;
+			for (desire : desires) {
+				score += desire.calculateScore(proposal)
+			}
+			if (wantedCandidate == null || wantedCandidateScore < score) {
+				wantedCandidate = candidate;
+				wantedCandidateScore = score;
+			}
+		}
+	}	
+	
+	on ElectionStartEvent {
+		println("I'm " + name + " and I vote for " + wantedCandidate)
+		emit(new VoteEvent(this, wantedCandidate),
+			Scopes.addresses(occurrence.source)
+		)
+	}
+}

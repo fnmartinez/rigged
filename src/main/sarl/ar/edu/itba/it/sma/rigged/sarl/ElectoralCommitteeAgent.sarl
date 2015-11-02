@@ -1,0 +1,57 @@
+package ar.edu.itba.^it.sma.rigged.sarl
+
+import io.sarl.core.Initialize
+import io.sarl.core.Schedules
+import java.util.HashSet
+import java.util.Set
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Logging
+
+agent ElectoralCommitteeAgent {
+	 uses DefaultContextInteractions, Schedules, Logging
+	 val popularOpinionTask = task('popularOpinionTask')
+	 val electionTask = task('electionTask')
+	 val candidates : Set<CandidateAgent> = new HashSet<CandidateAgent>()  
+	 var millisPerYear = 4000 
+	 var electionsInterval = 4
+	 var onElections : boolean = false 
+	 
+	 on Initialize [!occurrence.parameters.empty && occurrence.parameters.length == 2] {
+	 	millisPerYear = occurrence.parameters.get(0) as Integer
+	 	electionsInterval = occurrence.parameters.get(1) as Integer
+	 	println("I'm alive!")
+	 }
+	 
+	 on SuscribeCandidateEvent {
+	 	suscribe(occurrence.candidate)
+	 }
+	 
+	 def run() {
+ 		popularOpinionTask.every(millisPerYear) [
+ 			println("Emitting new PopularOpinionEvent")
+ 			emit(new PopularOpinionEvent(candidates))
+ 		]
+ 		electionTask.every(electionsInterval * millisPerYear) [
+ 			onElections = true
+ 			println("Emitting new ElectionEvent")
+ 			emit(new ElectionStartEvent())
+ 		]	 	
+	 }
+	 
+	 def suscribe(candidate : CandidateAgent) {
+	 	candidates.add(candidate)
+	 }
+	 
+	 def unsuscribe(candidate : CandidateAgent) {
+	 	candidates.remove(candidate)
+	 }
+	 
+	 def pause () {
+	 	popularOpinionTask.cancel()
+	 	electionTask.cancel()
+	 }
+	 
+	 def resume() {
+	 	run()
+	 }
+}

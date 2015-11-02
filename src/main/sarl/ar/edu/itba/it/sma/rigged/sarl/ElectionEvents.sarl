@@ -1,0 +1,16 @@
+package ar.edu.itba.^it.sma.rigged.sarl
+
+event ElectionStartEvent
+
+event ElectionEndEvent 
+
+event VoteEvent {
+	var voter : VoterAgent
+	var candidate : CandidateAgent
+	
+	new (voter : VoterAgent,
+		candidate : CandidateAgent) {
+		this.voter = voter
+		this.candidate = candidate
+	}
+}
