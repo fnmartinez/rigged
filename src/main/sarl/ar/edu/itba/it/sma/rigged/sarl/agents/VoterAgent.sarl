@@ -1,0 +1,161 @@
+package ar.edu.itba.^it.sma.rigged.sarl.agents
+
+import ar.edu.itba.it.sma.rigged.sarl.events.ElectionStartEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.OpinionEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeVoterEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.UnsuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.VoteEvent
+import ar.edu.itba.it.sma.rigged.sarl.support.Desire
+import ar.edu.itba.it.sma.rigged.sarl.support.proposals.Proposal
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.util.Scopes
+import java.util.ArrayList
+import java.util.HashMap
+import java.util.HashSet
+import java.util.List
+import java.util.concurrent.ThreadLocalRandom
+import org.apache.commons.lang3.builder.ToStringBuilder
+
+agent VoterAgent {
+	uses DefaultContextInteractions, Logging
+	
+	val _EQUALS_CANDIDATE_THRESHOLD = 0.5f
+	val desires = new ArrayList<Desire>()
+	val candidatesMemory = new HashMap<CandidateAgent, List<Proposal>>()
+	val shapers = new HashSet<OpinionShaperAgent>()
+	val random = ThreadLocalRandom.current
+	var _chosenCandidate : CandidateAgent = null
+	var _chosenCandidateScore : int 
+	var _previousCandidateScore : int
+	var name : String
+	
+	on Initialize [ !occurrence.parameters.empty ] {
+		name = occurrence.parameters.get(0) as String
+		desires.addAll(occurrence.parameters.get(1) as List<Desire>)
+		emit(new SuscribeVoterEvent(this))
+		println("Hi! I'm voter " + name + "!")
+		println(this.toString)
+	}
+	
+	on SuscribeCandidateEvent {
+		println(String.format("%s: Hi, candidate %s!", name, occurrence.candidate.name))
+		if (!candidatesMemory.containsKey(occurrence.candidate)) {
+			candidatesMemory.put(occurrence.candidate, newArrayList())
+		}
+	}
+	
+	on UnsuscribeCandidateEvent {
+		candidatesMemory.remove(occurrence.candidate)
+	}
+	
+	on OpinionEvent {
+		shapers.add(occurrence.shaper)
+	}
+	
+	on ElectionStartEvent {
+		if (candidatesMemory.isEmpty) { return; }
+		var candidate = _chooseCandidate()
+		println("I'm " + name + " and I vote for " + candidate)
+		emit(new VoteEvent(candidate),
+			Scopes.addresses(occurrence.source)
+		)
+	}
+	
+	def getName : String {
+		return name;
+	}
+	
+	def getDesires : List<Desire> {
+		return desires;
+	}
+
+	def _chooseCandidate : CandidateAgent {
+		candidatesMemory.entrySet.forEach [ candidateEntry | 
+			var candidateScore = _calculateCandidateValue(candidateEntry.key, candidateEntry.value)
+			println(String.format("Voter: %s Candidate: %s Score: %d", name, candidateEntry.key.name, candidateScore))
+			if (_changeChosenCandidate(candidateScore)) {
+				_previousCandidateScore = _chosenCandidateScore
+				_chosenCandidate = candidateEntry.key
+				_chosenCandidateScore = candidateScore
+			} 
+		] 
+//		if (_previousCandidateScore <= 0 && _chosenCandidateScore <= 0 && _nilVote()) {
+//			_chosenCandidate = null
+//			_chosenCandidateScore = 0
+//			_previousCandidateScore = 0
+//		}
+		return _chosenCandidate
+	}
+	
+	def _calculateCandidateValue(candidate : CandidateAgent, proposals : List<Proposal>) : int {
+		var ownCandidateScore =	_calculateCurrentProposalValue(candidate.proposal) +
+								_calculateHistoryValue(proposals)
+		return _calculateShapersValue(ownCandidateScore, candidate) + ownCandidateScore
+	}
+	
+	def _calculateCurrentProposalValue(proposal : Proposal) : int {
+		return _calculateProposalValue(proposal)
+	}
+	
+	def _calculateProposalValue(proposal : Proposal) : int {
+		var value : int = 0
+		for (desire : desires) {
+			value += desire.calculateScore(proposal)
+		}
+		return value;
+	}
+	
+	def _calculateHistoryValue(proposals : List<Proposal>) : int {
+		return 0
+	}
+	
+	def _calculateShapersValue(ownCandidateScore : int, candidate : CandidateAgent) : int {
+		var value : int = 0
+		for (shaper : shapers) {
+			var shapersOpinion = shaper.calculateCandidateOpinion(candidate)
+			value += (_calculateShapersCoef(ownCandidateScore, shapersOpinion) * shapersOpinion) as int
+		}
+		return value
+	}
+	
+	def _calculateShapersCoef(ownCandidateScore : int, shapersCandidateScore : int) : double {
+		var exp = ownCandidateScore - shapersCandidateScore
+		return if (exp > 0) Math.exp((-1.0) * exp) else Math.exp(exp) 
+	}
+	
+	def _changeChosenCandidate(newCandidateScore : int) : boolean {
+		var testScore = (random.nextGaussian + newCandidateScore)
+		
+		return _chosenCandidate == null  ||
+			_chosenCandidateScore < testScore ||
+			( _chosenCandidateScore == newCandidateScore &&
+				random.nextFloat < _EQUALS_CANDIDATE_THRESHOLD
+			)
+	}
+	
+	def _nilVote : boolean {
+		return random.nextBoolean
+	}
+	
+	def toString : String {
+		return new ToStringBuilder(this)
+					.append("name", name)
+					.append("desires", desires)
+					.build()
+	}
+	
+	def equals(other : Object) : boolean {
+		if (other == null || other.getClass.equals(this.getClass)) { return false; }
+		if (other == this) { return true; }
+		
+		val v = this.getClass.cast(other)
+		return this.isMe(v.ID)
+	}
+	
+	def hashCode : int {
+		return this.ID.hashCode
+	}
+}

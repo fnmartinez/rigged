@@ -1,0 +1,3 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+event ResourceChangeEvent

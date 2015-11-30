@@ -1,0 +1,9 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+event TimeEvent {
+	val steps : int
+	
+	new (steps : int) {
+		this.steps = steps
+	}	
+}

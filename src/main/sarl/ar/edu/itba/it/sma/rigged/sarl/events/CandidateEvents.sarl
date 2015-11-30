@@ -1,0 +1,19 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+import ar.edu.itba.^it.sma.rigged.sarl.agents.CandidateAgent
+
+event SuscribeCandidateEvent {
+	var candidate : CandidateAgent
+	
+	new (candidate : CandidateAgent) {
+		this.candidate = candidate
+	}
+}
+
+event UnsuscribeCandidateEvent {
+	var candidate : CandidateAgent
+	
+	new (candidate : CandidateAgent) {
+		this.candidate = candidate
+	}
+}

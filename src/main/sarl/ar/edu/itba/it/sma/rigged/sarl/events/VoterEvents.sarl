@@ -1,0 +1,19 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+import ar.edu.itba.^it.sma.rigged.sarl.agents.VoterAgent
+
+event SuscribeVoterEvent {
+	val voter : VoterAgent
+	
+	new (voter : VoterAgent) {
+		this.voter = voter
+	}	
+}
+
+event UnsuscribeVoterEvent {
+	val voter : VoterAgent
+	
+	new (voter : VoterAgent) {
+		this.voter = voter
+	}	
+}

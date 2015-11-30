@@ -1,0 +1,90 @@
+package ar.edu.itba.^it.sma.rigged.sarl.agents
+
+import ar.edu.itba.^it.sma.rigged.api.utils.JanusManager
+import ar.edu.itba.^it.sma.rigged.sarl.events.TimeEvent
+import ar.edu.itba.^it.sma.rigged.sarl.support.AgentStatus
+import ar.edu.itba.^it.sma.rigged.sarl.support.Resource
+import io.sarl.core.AgentTask
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import io.sarl.core.Schedules
+import java.util.ArrayList
+import java.util.List
+import java.util.Collections
+import org.apache.commons.lang3.builder.ToStringBuilder
+
+agent EnvironmentAgent {
+	uses Schedules, DefaultContextInteractions, Logging
+	val resources = new ArrayList<Resource>()
+	val timeSyncLocker = new Object()
+	var status = AgentStatus.INSTANTIATED
+	var janusManager : JanusManager 
+	var monthEvent : AgentTask
+	var onTimeSyncLock = false
+	var millisPerMonth = 1000
+	
+	on Initialize [!occurrence.parameters.empty] {
+		janusManager = occurrence.parameters.get(0) as JanusManager
+		millisPerMonth = occurrence.parameters.get(1) as Integer
+		resources.addAll(occurrence.parameters.get(2) as List<Resource>)
+		janusManager.environmentAgent(this)
+		println(this)
+		println("---------- There is a God ----------")
+	}
+	
+	def run : AgentStatus {
+		_onTimeSyncLock [|
+			monthEvent = every(millisPerMonth) [
+				if (defaultSpace.participants.size > 1) {
+					emit(new TimeEvent(1))
+				}
+				status = AgentStatus.RUNNING	
+			]	
+		]
+		return status
+	}
+	
+	def pause : AgentStatus {
+		_onTimeSyncLock [|
+			if (monthEvent != null) {
+				monthEvent.cancel
+				monthEvent = null;
+			}
+			status = AgentStatus.PAUSED
+		]
+		return status
+	}
+	
+	def step(step : int) : AgentStatus  {
+		_onTimeSyncLock [|
+			emit(new TimeEvent(step))
+		]
+		return status
+	}
+	
+	def _onTimeSyncLock (exec : ()=>void) {
+		if (onTimeSyncLock) { return; }
+		synchronized (timeSyncLocker) {
+			if (onTimeSyncLock) { return; }
+			onTimeSyncLock = true
+			exec.apply()
+			onTimeSyncLock = false
+		}
+	}
+	
+	def getStatus : AgentStatus {
+		return status
+	} 
+	
+	def getResources : List<Resource> {
+		return Collections.unmodifiableList(resources)
+	}
+	
+	def toString : String {
+		return new ToStringBuilder(this)
+					.append("resources", resources)
+					.append("millisPerMonth", millisPerMonth)
+					.toString()
+	}
+}

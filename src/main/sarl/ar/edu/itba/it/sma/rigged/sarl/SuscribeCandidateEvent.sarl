@@ -1,9 +1,0 @@
-package ar.edu.itba.it.sma.rigged.sarl
-
-event SuscribeCandidateEvent {
-	var candidate : CandidateAgent
-	
-	new (candidate : CandidateAgent) {
-		this.candidate = candidate
-	}
-}

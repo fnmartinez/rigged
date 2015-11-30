@@ -1,8 +1,12 @@
-package ar.edu.itba.it.sma.rigged.sarl.support;
+package ar.edu.itba.it.sma.rigged.sarl.support.proposals;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import ar.edu.itba.it.sma.rigged.sarl.support.Resource;
 
 public class Proposal {
 	
@@ -24,5 +28,13 @@ public class Proposal {
 	
 	protected void setMet() {
 		this.met = true;	
+	}
+	
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this)
+					.append("content", content)
+					.append("met", met)
+					.build();
 	}
 }

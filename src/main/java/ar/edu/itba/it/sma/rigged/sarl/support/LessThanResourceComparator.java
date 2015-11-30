@@ -1,8 +1,7 @@
 package ar.edu.itba.it.sma.rigged.sarl.support;
 
-import java.util.Comparator;
 
-public class LessThanResourceComparator implements Comparator<Resource> {
+public class LessThanResourceComparator implements ResourceComparator {
 	
 	private final int max;
 	
@@ -12,26 +11,28 @@ public class LessThanResourceComparator implements Comparator<Resource> {
 
 	@Override
 	public int compare(Resource actualValue, Resource proposedValue) {
-		if (actualValue.getValue() > max) {
-			if (proposedValue.getValue() > actualValue.getValue()) {
-				return -3;
-			} else {
-				return -1;
-			}
-		} else {
-			if (proposedValue.getValue() > actualValue.getValue()) {
-				if (proposedValue.getValue() > max) {
-					return -3;
-				} else {
-					return -2;
-				}
-			} else {
-				return 1;
-			}
-		}
+		return expectedHappiness(proposedValue) - currentHappiness(actualValue);
+	}
+
+	private int expectedHappiness(Resource proposedValue) {
+		return max - proposedValue.getValue();
+	}
+	
+	private int currentHappiness(Resource actualValue) {
+		return max - actualValue.getValue();
 	}
 
 	public String toString() {
 		return "LessThan: " + max;
+	}
+
+	@Override
+	public String getTypeName() {
+		return " < ";
+	}
+
+	@Override
+	public int getValue() {
+		return max;
 	}
 }

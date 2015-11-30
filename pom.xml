@@ -38,6 +38,11 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -100,4 +105,11 @@
 			<url>http://maven.sarl.io/</url>
 		</repository>
 	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>sarl</id>
+			<name>SARL Project Repo</name>
+			<url>http://maven.sarl.io/</url>
+		</pluginRepository>
+	</pluginRepositories>
 </project>

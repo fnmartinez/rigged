@@ -9,17 +9,18 @@
     <meta name="author" content="">
     <link rel="icon" href="favicon.gif">
 
-    <title>Rigged: An SMA Voting Simulator</title>
+    <title>Rigged: A MAS Voting Simulator</title>
 
     <!-- Bootstrap core CSS -->
     <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ==" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap.3.3.6.min.css">
 
     <!-- Optional theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css" integrity="sha384-aUGj/X2zp5rLCbBxumKTCw2Z50WgIr1vs/PFN4praOTvYXWlVyh2UtNUU0KAUhAX" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/bootstrap-theme.3.3.6.min.css">
 
     <!-- Custom styles for this template -->
     <link href="css/dashboard.css" rel="stylesheet">
+	<link href="css/charts.css" rel="stylesheet">
 
     <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
 
@@ -44,11 +45,18 @@
           <a class="navbar-brand" href="#">Rigged</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
-          <div class="nav navbar-center navbar-nav btn-group control-panel" role="group">
-            <button type="button" class="btn btn-default" onclick="play()"><span class="glyphicon glyphicon-play" aria-hidden="true"></span></button>
-            <button type="button" class="btn btn-default" onclick="pause()"><span class="glyphicon glyphicon-pause" aria-hidden="true"></span></button>
-            <button type="button" class="btn btn-default" onclick="stepOne()"><span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span></button>
+          <div class="nav navbar-nav btn-group control-panel" role="group">
+            <button id="playBtn" type="button" class="btn btn-default" onclick="play()"><span class="glyphicon glyphicon-play" aria-hidden="true"></span></button>
+            <button id="pauseBtn" type="button" class="btn btn-default" onclick="pause()"><span class="glyphicon glyphicon-pause" aria-hidden="true"></span></button>
+            <button id="stepBtn" type="button" class="btn btn-default" onclick="stepOne()"><span class="glyphicon glyphicon-step-forward" aria-hidden="true"></span></button>
           </div>
+		  <div class="nav navbar-nav status-bar">
+			  <span id="environmentAgentStatus" class="label label-default">EnvironmentAgent</span>
+			  <span id="electoralCommitteeStatus" class="label label-default">ElectoralCommitteeAgent</span>
+			  <span id="electionStatusLabel" class="label label-default">On Elections: <span id="electionStatusBadge" class="badge">No</span></span>
+			  <span id="monthCountLabel" class="label label-primary">Month Count: <span id="monthCountBadge" class="badge">0</span></span>
+			  <span id="currentElectedCandidateLabel" class="label label-primary">Current Elected Candidate: <span id="currentElectedCandidateBadge" class="badge">none</span></span>
+		  </div>
           <ul class="nav navbar-nav navbar-right">
             <li><a href="#">Dashboard</a></li>
             <li><a href="#">Settings</a></li>
@@ -63,166 +71,51 @@
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
             <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
+            <li><a href="#">Environment</a></li>
             <li><a href="#">Electoral Commission</a></li>
             <li><a href="#">Candidates</a></li>
             <li><a href="#">Voters</a></li>
-            <li><a href="#">World</a></li>
           </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
           <h1 class="page-header">Overview</h1>
-
           <div class="row placeholders">
+			  <div class="col-xs-12 col-sm-3 placeholder">
+				  <div id="vote-intent"></div>
+				  <h4>Vote Intent</h4>
+			  </div>
+            <!--div class="col-xs-6 col-sm-3 placeholder">
+              <svg id="vote-intent"></svg>
+              <h4>Vote Intent</h4>
+            </div>
             <div class="col-xs-6 col-sm-3 placeholder">
-              <img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
+              <svg id="opinion-shapers-bias"><svg>
+              <h4>Opinion Shapers Bias</h4>
+            </div>
+            <div class="col-xs-6 col-sm-3 placeholder">
+              <svg id="global-resources"></svg>
+              <h4>Global Resources</h4>
             </div>
             <div class="col-xs-6 col-sm-3 placeholder">
               <img data-src="holder.js/200x200/auto/vine" class="img-responsive" alt="Generic placeholder thumbnail">
               <h4>Label</h4>
               <span class="text-muted">Something else</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img data-src="holder.js/200x200/auto/vine" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-            </div>
+		  	</div-->
           </div>
 
-          <h2 class="sub-header">Section title</h2>
+          <h2 class="sub-header">Voters</h2>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Header</th>
-                  <th>Header</th>
-                  <th>Header</th>
-                  <th>Header</th>
+                  <th>Voter Name</th>
+                  <th>Desire</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td>1,001</td>
-                  <td>Lorem</td>
-                  <td>ipsum</td>
-                  <td>dolor</td>
-                  <td>sit</td>
-                </tr>
-                <tr>
-                  <td>1,002</td>
-                  <td>amet</td>
-                  <td>consectetur</td>
-                  <td>adipiscing</td>
-                  <td>elit</td>
-                </tr>
-                <tr>
-                  <td>1,003</td>
-                  <td>Integer</td>
-                  <td>nec</td>
-                  <td>odio</td>
-                  <td>Praesent</td>
-                </tr>
-                <tr>
-                  <td>1,003</td>
-                  <td>libero</td>
-                  <td>Sed</td>
-                  <td>cursus</td>
-                  <td>ante</td>
-                </tr>
-                <tr>
-                  <td>1,004</td>
-                  <td>dapibus</td>
-                  <td>diam</td>
-                  <td>Sed</td>
-                  <td>nisi</td>
-                </tr>
-                <tr>
-                  <td>1,005</td>
-                  <td>Nulla</td>
-                  <td>quis</td>
-                  <td>sem</td>
-                  <td>at</td>
-                </tr>
-                <tr>
-                  <td>1,006</td>
-                  <td>nibh</td>
-                  <td>elementum</td>
-                  <td>imperdiet</td>
-                  <td>Duis</td>
-                </tr>
-                <tr>
-                  <td>1,007</td>
-                  <td>sagittis</td>
-                  <td>ipsum</td>
-                  <td>Praesent</td>
-                  <td>mauris</td>
-                </tr>
-                <tr>
-                  <td>1,008</td>
-                  <td>Fusce</td>
-                  <td>nec</td>
-                  <td>tellus</td>
-                  <td>sed</td>
-                </tr>
-                <tr>
-                  <td>1,009</td>
-                  <td>augue</td>
-                  <td>semper</td>
-                  <td>porta</td>
-                  <td>Mauris</td>
-                </tr>
-                <tr>
-                  <td>1,010</td>
-                  <td>massa</td>
-                  <td>Vestibulum</td>
-                  <td>lacinia</td>
-                  <td>arcu</td>
-                </tr>
-                <tr>
-                  <td>1,011</td>
-                  <td>eget</td>
-                  <td>nulla</td>
-                  <td>Class</td>
-                  <td>aptent</td>
-                </tr>
-                <tr>
-                  <td>1,012</td>
-                  <td>taciti</td>
-                  <td>sociosqu</td>
-                  <td>ad</td>
-                  <td>litora</td>
-                </tr>
-                <tr>
-                  <td>1,013</td>
-                  <td>torquent</td>
-                  <td>per</td>
-                  <td>conubia</td>
-                  <td>nostra</td>
-                </tr>
-                <tr>
-                  <td>1,014</td>
-                  <td>per</td>
-                  <td>inceptos</td>
-                  <td>himenaeos</td>
-                  <td>Curabitur</td>
-                </tr>
-                <tr>
-                  <td>1,015</td>
-                  <td>sodales</td>
-                  <td>ligula</td>
-                  <td>in</td>
-                  <td>libero</td>
-                </tr>
+              <tbody id="voters">
               </tbody>
             </table>
-          </div>
+		  </div>
         </div>
       </div>
     </div>
@@ -230,8 +123,11 @@
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js" integrity="sha512-K1qjQ+NcF2TYO/eI3M6v8EiNYZfA95pQumfvcVrTHtwQVDG+aHRqLi/ETn2uB+1JqwYqVG3LIvdm9lj6imS/pQ==" crossorigin="anonymous"></script>
-    <script src="js/main.js"></script>
+	<script src="js/lib/d3.v3.min.js" charset="utf-8"></script>
+    <script src="js/lib/jquery.2.1.4.min.js"></script>
+    <script src="js/lib/bootstrap.3.3.6.min.js"></script>
+	<script src="js/d3.helpers.js"></script>
+	<script src="js/types.js"></script>
+    <script src="js/dashboard.js"></script>
   </body>
 </html>

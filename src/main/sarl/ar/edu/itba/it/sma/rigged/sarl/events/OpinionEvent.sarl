@@ -1,0 +1,11 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+import ar.edu.itba.^it.sma.rigged.sarl.agents.OpinionShaperAgent
+
+event OpinionEvent {
+	val shaper : OpinionShaperAgent
+	
+	new (shaper : OpinionShaperAgent) {
+		this.shaper = shaper
+	}
+}

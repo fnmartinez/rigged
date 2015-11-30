@@ -1,0 +1,82 @@
+package ar.edu.itba.^it.sma.rigged.sarl.agents
+
+import ar.edu.itba.it.sma.rigged.sarl.events.PopularOpinionEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.UnsuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.support.proposals.Proposal
+import ar.edu.itba.it.sma.rigged.sarl.support.proposals.ProposalChangeStrategy
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Destroy
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import org.apache.commons.lang3.builder.ToStringBuilder
+
+agent CandidateAgent {
+	uses DefaultContextInteractions, Logging
+	var proposalChangeStrategy : ProposalChangeStrategy
+	var initialProposal : Proposal
+	var proposal : Proposal
+	var name : String
+	
+	on Initialize [ !occurrence.parameters.empty ] {
+		name = occurrence.parameters.get(0) as String
+		proposal = initialProposal = occurrence.parameters.get(1) as Proposal
+		proposalChangeStrategy = occurrence.parameters.get(2) as ProposalChangeStrategy
+		emit(new SuscribeCandidateEvent(this))
+		println("Hi! I'm " + name + "!")
+	}
+	
+	on Destroy {
+		emit(new UnsuscribeCandidateEvent(this))
+	}
+	
+	on PopularOpinionEvent {
+		var myVotes : int = 0
+		var maxVotes : int = 0
+		var maxVotesAgent : CandidateAgent = null
+		for (candidateEntry : occurrence.popularOpinionMap.entrySet) {
+			if (candidateEntry.key.equals(this)) {
+				myVotes = candidateEntry.value
+			} else {
+				if (candidateEntry.value > maxVotes) {
+					maxVotes = candidateEntry.value
+					maxVotesAgent = candidateEntry.key
+				}				
+			}
+		}
+		if (myVotes <= maxVotes) {
+			proposal = proposalChangeStrategy.changeProposal(proposal, myVotes)
+		}
+	}
+	
+	def getName : String {
+		return name
+	}
+	
+	def getRealProposal : Proposal {
+		return initialProposal
+	}
+	
+	def getProposal : Proposal {
+		return proposal
+	}
+	
+	def toString : String {
+		return new ToStringBuilder(this)
+					.append("name", name)
+					.append("proposal", proposal)
+					.build()
+	}
+	
+	def equals(other : Object) : boolean {
+		if (other == null || other.getClass.equals(this.getClass)) { return false; }
+		if (other == this) { return true; }
+		
+		val v = this.getClass.cast(other)
+		return this.isMe(v.ID)
+	}
+	
+	def hashCode : int {
+		return this.ID.hashCode
+	}	
+}

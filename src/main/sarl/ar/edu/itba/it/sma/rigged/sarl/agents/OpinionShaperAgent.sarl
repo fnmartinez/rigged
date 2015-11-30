@@ -1,0 +1,90 @@
+package ar.edu.itba.^it.sma.rigged.sarl.agents
+
+import ar.edu.itba.^it.sma.rigged.api.utils.JanusManager
+import ar.edu.itba.^it.sma.rigged.sarl.events.ElectionEndEvent
+import ar.edu.itba.^it.sma.rigged.sarl.events.ElectionStartEvent
+import ar.edu.itba.^it.sma.rigged.sarl.events.OpinionEvent
+import ar.edu.itba.^it.sma.rigged.sarl.events.SuscribeCandidateEvent
+import ar.edu.itba.^it.sma.rigged.sarl.events.TimeEvent
+import ar.edu.itba.^it.sma.rigged.sarl.events.UnsuscribeCandidateEvent
+import ar.edu.itba.^it.sma.rigged.sarl.support.Desire
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Initialize
+import java.util.ArrayList
+import java.util.HashSet
+import java.util.List
+import org.apache.commons.lang3.builder.ToStringBuilder
+
+agent OpinionShaperAgent {
+	uses DefaultContextInteractions 
+	val desires = new ArrayList<Desire>()
+	val candidates = new HashSet<CandidateAgent>()
+	var onElections = false
+	var steps = 0
+	var name : String
+	var janusManager : JanusManager
+	var opinionInterval : int
+	
+	on Initialize [ !occurrence.parameters.empty ] {
+		janusManager = occurrence.parameters.get(0) as JanusManager
+		name = occurrence.parameters.get(1) as String
+		opinionInterval = occurrence.parameters.get(2) as Integer
+		desires.addAll(occurrence.parameters.get(3) as List<Desire>)
+		janusManager.add(this)
+	}
+
+	on ElectionStartEvent {
+		onElections = true	
+	}
+	
+	on ElectionEndEvent {
+		onElections = false
+	}
+	
+	on SuscribeCandidateEvent {
+		candidates.add(occurrence.candidate)		
+	}
+	
+	on UnsuscribeCandidateEvent {
+		candidates.remove(occurrence.candidate)
+	}
+	
+	on TimeEvent {
+		steps += occurrence.steps
+		Thread.sleep(10)
+		if (steps % opinionInterval == 0 && !onElections) {
+			emit(new OpinionEvent(this))
+		}		
+	}
+	
+	def getName : String {
+		return name
+	}
+	
+	def calculateCandidateOpinion(candidate : CandidateAgent) : int {
+		var value : int = 0
+		for (desire : desires) {
+			value += desire.calculateScore(candidate.proposal)
+		}
+		return value
+	}
+	
+	def equals(other : Object) : boolean {
+		if (other == null || other.getClass.equals(this.getClass)) { return false; }
+		if (other == this) { return true; }
+		
+		val v = this.getClass.cast(other)
+		return this.isMe(v.ID)
+	}
+	
+	def hashCode : int {
+		return this.ID.hashCode
+	}
+	
+	def toString : String {
+		return new ToStringBuilder(this)
+					.append("name", name)
+					.append("desires", desires)
+					.build()
+	}
+}

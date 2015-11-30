@@ -103,11 +103,10 @@ body {
   display: inline-block;
   border-radius: 50%;
 }
-
 .control-panel {
   margin-top: 8px
 }
-
-.navbar-center {
-  align-self: center;
+.status-bar {
+	padding-top: 10px
+	margin-left: 5px
 }

@@ -1,0 +1,12 @@
+package ar.edu.itba.^it.sma.rigged.sarl.events
+
+import ar.edu.itba.it.sma.rigged.sarl.agents.CandidateAgent
+import java.util.Map
+
+event PopularOpinionEvent {
+	var popularOpinionMap : Map<CandidateAgent, Integer> 
+	
+	new (popularOpinionMap : Map<CandidateAgent, Integer>) {
+		this.popularOpinionMap = popularOpinionMap
+	}
+}

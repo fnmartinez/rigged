@@ -1,5 +1,7 @@
 package ar.edu.itba.it.sma.rigged.sarl.support;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
 public class Resource {
 	
 	private final String name;
@@ -21,5 +23,22 @@ public class Resource {
 	public void alterValue(int value) {
 		this.value = value;
 	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		return name.equals(obj);
+	}
+	
+	@Override
+	public int hashCode() {
+		return name.hashCode();
+	}
 
+	@Override
+	public String toString() {
+		return new ToStringBuilder(this)
+					.append("name", name)
+					.append("value", value)
+					.build();
+	}
 }

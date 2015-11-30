@@ -1,0 +1,180 @@
+package ar.edu.itba.^it.sma.rigged.sarl.agents
+
+import ar.edu.itba.^it.sma.rigged.api.utils.JanusManager
+import ar.edu.itba.it.sma.rigged.sarl.events.ElectionEndEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.ElectionStartEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.PopularOpinionEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeVoterEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.TimeEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.UnsuscribeCandidateEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.UnsuscribeVoterEvent
+import ar.edu.itba.it.sma.rigged.sarl.events.VoteEvent
+import ar.edu.itba.it.sma.rigged.sarl.support.AgentStatus
+import io.sarl.core.DefaultContextInteractions
+import io.sarl.core.Initialize
+import io.sarl.core.Logging
+import java.util.ArrayList
+import java.util.Collections
+import java.util.Map
+import java.util.Random
+import java.util.Set
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ThreadLocalRandom
+
+agent ElectoralCommitteeAgent {
+	 uses DefaultContextInteractions, Logging
+	 val candidates : Set<CandidateAgent> = Collections.newSetFromMap(new ConcurrentHashMap())  
+	 val voters : Set<VoterAgent> = Collections.newSetFromMap(new ConcurrentHashMap())
+	 val votes : Map<CandidateAgent, Integer> = new ConcurrentHashMap<CandidateAgent, Integer>()
+	 val random : Random = ThreadLocalRandom.current
+	 var janusManager : JanusManager
+	 var currentElectedCandidate : CandidateAgent
+	 var popularOpinionVotersPct : int = 20;
+	 var status = AgentStatus.INSTANTIATED
+	 var electionsInterval = 24
+	 var onElections : boolean = false 
+	 var steps : int = 0
+	 
+	 on Initialize [!occurrence.parameters.empty] {
+	 	janusManager = occurrence.parameters.get(0) as JanusManager
+	 	electionsInterval = occurrence.parameters.get(1) as Integer
+	 	janusManager.electoralCommittee(this)
+	 	println("---------- Electoral Committee Instantiated ----------")
+	 }
+	 	 
+	 on SuscribeCandidateEvent {
+	 	suscribe(occurrence.candidate)
+	 }
+	 
+	 on UnsuscribeCandidateEvent {
+	 	unsuscribe(occurrence.candidate)
+	 }
+	 
+	 on SuscribeVoterEvent {
+	 	suscribe(occurrence.voter)
+	 }
+	 
+	 on UnsuscribeVoterEvent {
+	 	unsuscribe(occurrence.voter)
+	 }
+	 
+	 on VoteEvent {
+	 	if (occurrence.candidate == null) { return; }
+	 	
+	 	if (!votes.containsKey(occurrence.candidate)) {
+	 		votes.put(occurrence.candidate, 0)
+	 	}
+	 	votes.put(occurrence.candidate, votes.get(occurrence.candidate) + 1)
+	 }
+	 
+	 on TimeEvent {
+	 	steps += occurrence.steps
+	 	if (onElections) {
+	 		val electedCandidate = electCandidate()
+	 		onElections = false;
+	 		currentElectedCandidate = electedCandidate
+	 		println("------------- Ending Elections -------------")
+	 		println(String.format("The new elected candidate is %s", currentElectedCandidate))
+	 		emit(new ElectionEndEvent(electedCandidate))
+	 	} else {
+	 		emit(new PopularOpinionEvent(_generatePopularOpinionMap()))
+	 	}
+	 	if (steps > 0 && steps % electionsInterval == 0 && !onElections) {
+	 		println("------------- Starting Elections -------------")
+	 		votes.clear
+	 		onElections = true
+	 		emit(new ElectionStartEvent)
+	 	}
+	 }
+	 
+	 def _generatePopularOpinionMap : Map<CandidateAgent, Integer> {
+	 	var popularOpinionMap = newHashMap()
+	 	for (candidate : candidates) {
+	 		popularOpinionMap.put(candidate, 0)
+	 	}
+	 	for (voter : voters) {
+	 		if (random.nextInt(100) < popularOpinionVotersPct) {
+	 			var candidate = voter._chooseCandidate
+	 			var previousVotes = popularOpinionMap.get(candidate)
+	 			popularOpinionMap.put(candidate, previousVotes + 1)
+	 		}
+	 	}
+	 	return popularOpinionMap
+	 }
+	 
+	 def electCandidate : CandidateAgent {
+	 	val electedCandidates = new ArrayList<CandidateAgent>()
+ 		votes.entrySet.forEach [ candidateEntry |
+ 			println(String.format("Candidate: %s Votes: %d", candidateEntry.key.name, candidateEntry.value))
+ 			if (electedCandidates.size == 0) {
+ 				electedCandidates.add(candidateEntry.key)
+ 			} else {
+ 				val electedCandidateVotes = votes.get(electedCandidates.get(0))
+ 				if (electedCandidateVotes == candidateEntry.value) {
+ 					electedCandidates.add(candidateEntry.key)
+ 				} else if (electedCandidateVotes < candidateEntry.value) {
+ 					electedCandidates.clear
+ 					electedCandidates.add(candidateEntry.key)
+ 				}
+ 			}
+ 		]
+ 		if (electedCandidates.size == 0) {
+ 			println("No canidadte elected")
+ 			return null;
+ 		} else if (electedCandidates.size == 1) {
+ 			return electedCandidates.get(0)
+ 		} else {
+ 			return electedCandidates.get(new Random(System.currentTimeMillis).nextInt(electedCandidates.size))
+ 		}
+	 }
+	 
+	 def suscribe(voter : VoterAgent) {
+	 	voters.add(voter)
+	 	println("Voter " + voter.name + " added")
+	 }
+	 
+	 def unsuscribe(voter : VoterAgent) {
+	 	voters.remove(voter)
+	 	println("Voter " + voter.name + " removed")
+	 }
+	 	 
+	 def suscribe(candidate : CandidateAgent) {
+	 	candidates.add(candidate)
+	 	println("Candidate " + candidate.name + " added")
+	 	println(candidate.toString)
+	 }
+	 
+	 def unsuscribe(candidate : CandidateAgent) {
+	 	candidates.remove(candidate)
+	 	println("Candidate " + candidate.name + " removed")
+	 }
+	 
+	 def getStatus : AgentStatus {
+	 	return status;
+	 }
+	 
+	 def getSteps : int {
+	 	return steps;
+	 }
+	 
+	 def getElectionsInterval : int {
+	 	return electionsInterval
+	 }
+	 
+	 def isOnElections : boolean {
+	 	return onElections
+	 }
+	 
+	 def getCurrentElectedCandidate : CandidateAgent {
+	 	return currentElectedCandidate
+	 }
+	 
+	 def getCandidates : Set<CandidateAgent> {
+	 	return Collections.unmodifiableSet(candidates)
+	 }
+	 
+	 def getVoters : Set<VoterAgent> {
+	 	return Collections.unmodifiableSet(voters)
+	 }
+}
