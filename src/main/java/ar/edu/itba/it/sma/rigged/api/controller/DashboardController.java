@@ -6,11 +6,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import ar.edu.itba.it.sma.rigged.api.beans.CandidatesAlignment;
+import ar.edu.itba.it.sma.rigged.api.beans.ShapersAlignment;
 import ar.edu.itba.it.sma.rigged.api.beans.StatusMessage;
 import ar.edu.itba.it.sma.rigged.api.beans.VoteIntentResponse;
+import ar.edu.itba.it.sma.rigged.api.beans.VotersAlignment;
 import ar.edu.itba.it.sma.rigged.api.beans.VotersResponse;
 import ar.edu.itba.it.sma.rigged.api.utils.JanusManager;
 import ar.edu.itba.it.sma.rigged.sarl.agents.VoterAgent;
+import ar.edu.itba.it.sma.rigged.utils.ConfigurationManager;
 
 @RestController
 @RequestMapping("/dashboard")
@@ -42,7 +46,8 @@ public class DashboardController {
 				janusManager.electoralCommittee().getStatus(),
 				janusManager.electoralCommittee().getCurrentElectedCandidate(), 
 				janusManager.electoralCommittee().getSteps(),
-				janusManager.electoralCommittee().isOnElections());
+				janusManager.electoralCommittee().isOnElections(),
+				janusManager.randomSeed());
 	}
 	
 	@RequestMapping(value = "/vote-intent", method = RequestMethod.GET)
@@ -54,6 +59,21 @@ public class DashboardController {
 		return intent;
 	}
 	
+	@RequestMapping(value = "/voters-alignment", method = RequestMethod.GET) 
+	public VotersAlignment votersAlignment() {
+		return new VotersAlignment(ConfigurationManager.INSTANCE.getResourceRange(), ConfigurationManager.INSTANCE.getResourceRange(), janusManager.voters());
+	}
+	
+	@RequestMapping(value = "/shapers-alignment", method = RequestMethod.GET) 
+	public ShapersAlignment shapersAlignment() {
+		return new ShapersAlignment(ConfigurationManager.INSTANCE.getResourceRange(), ConfigurationManager.INSTANCE.getResourceRange(), janusManager.opinionShapers());
+	}
+	
+	@RequestMapping(value = "/candidates-alignment", method = RequestMethod.GET) 
+	public CandidatesAlignment candidatesAlignment() {
+		return new CandidatesAlignment(ConfigurationManager.INSTANCE.getResourceRange(), ConfigurationManager.INSTANCE.getResourceRange(), janusManager.candidates());
+	}
+
 	@RequestMapping(value = "/voters")
 	public VotersResponse voters() {
 		VotersResponse vr = new VotersResponse(janusManager.voters());

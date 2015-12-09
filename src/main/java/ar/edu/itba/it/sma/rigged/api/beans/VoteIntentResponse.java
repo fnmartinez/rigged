@@ -11,7 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 import ar.edu.itba.it.sma.rigged.sarl.agents.CandidateAgent;
-import ar.edu.itba.it.sma.rigged.sarl.support.Resource;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.Resource;
 
 public class VoteIntentResponse {
 	

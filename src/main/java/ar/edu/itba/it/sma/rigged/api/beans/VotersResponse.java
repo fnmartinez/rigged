@@ -3,7 +3,7 @@ package ar.edu.itba.it.sma.rigged.api.beans;
 import java.util.List;
 
 import ar.edu.itba.it.sma.rigged.sarl.agents.VoterAgent;
-import ar.edu.itba.it.sma.rigged.sarl.support.Desire;
+import ar.edu.itba.it.sma.rigged.sarl.support.desires.Desire;
 
 import com.google.common.collect.Lists;
 

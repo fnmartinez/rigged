@@ -1,9 +1,14 @@
 .axis path {
-    fill: none;
     stroke: #777;
-    shape-rendering: crispEdges;
 }
 .axis text {
     font-family: Lato;
     font-size: 13px;
+}
+.middle-axis {
+	stroke-width: 1px;
+}
+.border-axis {
+	fill: none;
+	shape-rendering: crispEdges;
 }

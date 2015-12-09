@@ -56,6 +56,7 @@
 			  <span id="electionStatusLabel" class="label label-default">On Elections: <span id="electionStatusBadge" class="badge">No</span></span>
 			  <span id="monthCountLabel" class="label label-primary">Month Count: <span id="monthCountBadge" class="badge">0</span></span>
 			  <span id="currentElectedCandidateLabel" class="label label-primary">Current Elected Candidate: <span id="currentElectedCandidateBadge" class="badge">none</span></span>
+			  <span id="seedLabel" class="label label-primary">Seed: <span id="seedBadge" class="badge">none</span></span>
 		  </div>
           <ul class="nav navbar-nav navbar-right">
             <li><a href="#">Dashboard</a></li>
@@ -68,7 +69,7 @@
 
     <div class="container-fluid">
       <div class="row">
-        <div class="col-sm-3 col-md-2 sidebar">
+        <!-- <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
             <li class="active"><a href="#">Overview <span class="sr-only">(current)</span></a></li>
             <li><a href="#">Environment</a></li>
@@ -76,34 +77,42 @@
             <li><a href="#">Candidates</a></li>
             <li><a href="#">Voters</a></li>
           </ul>
-        </div>
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+        </div> -->
+        <!-- <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main"> -->
+		<div class="main">
           <h1 class="page-header">Overview</h1>
           <div class="row placeholders">
-			  <div class="col-xs-12 col-sm-3 placeholder">
+			  <div class="col-xs-12 col-md-10 placeholder">
 				  <div id="vote-intent"></div>
 				  <h4>Vote Intent</h4>
 			  </div>
-            <!--div class="col-xs-6 col-sm-3 placeholder">
-              <svg id="vote-intent"></svg>
-              <h4>Vote Intent</h4>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <svg id="opinion-shapers-bias"><svg>
-              <h4>Opinion Shapers Bias</h4>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <svg id="global-resources"></svg>
-              <h4>Global Resources</h4>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <img data-src="holder.js/200x200/auto/vine" class="img-responsive" alt="Generic placeholder thumbnail">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
-		  	</div-->
-          </div>
+			  <div class="col-xs-12 col-md-2 placeholder">
+				  <div id="vote-intent-legend"></div>
+				  <h4>Vote Intent</h4>
+			  </div>
+		  </div>
 
-          <h2 class="sub-header">Voters</h2>
+		  <div class="row" id="alignments">
+		  <h2 class="sub-header">Alignments</h2>
+			  <div class="row">
+				  <div class="col-xs-12 col-sm-12 col-md-12">
+					  <div id="candidates-alignment"></div>
+					  <h4>Candidatos</h4>
+				  </div>
+			  </div>
+			  <div class="row">
+				  <div class="col-xs-12 col-sm-12 col-md-6">
+					  <div id="voters-alignment"></div>
+					  <h4>Votantes</h4>
+				  </div>
+				  <div class="col-xs-12 col-sm-12 col-md-6">
+					  <div id="shapers-alignment"></div>
+					  <h4>Formadores de Opinión</h4>
+				  </div>
+			  </div>
+		  </div>
+
+          <!-- <h2 class="sub-header">Voters</h2>
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
@@ -115,10 +124,11 @@
               <tbody id="voters">
               </tbody>
             </table>
-		  </div>
+		  </div> -->
         </div>
       </div>
-    </div>
+	</div>
+
 
     <!-- Bootstrap core JavaScript
     ================================================== -->

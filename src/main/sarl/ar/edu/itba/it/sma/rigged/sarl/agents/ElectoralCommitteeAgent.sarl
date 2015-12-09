@@ -1,6 +1,6 @@
 package ar.edu.itba.^it.sma.rigged.sarl.agents
 
-import ar.edu.itba.^it.sma.rigged.api.utils.JanusManager
+import ar.edu.itba.it.sma.rigged.api.utils.JanusManager
 import ar.edu.itba.it.sma.rigged.sarl.events.ElectionEndEvent
 import ar.edu.itba.it.sma.rigged.sarl.events.ElectionStartEvent
 import ar.edu.itba.it.sma.rigged.sarl.events.PopularOpinionEvent
@@ -20,14 +20,13 @@ import java.util.Map
 import java.util.Random
 import java.util.Set
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ThreadLocalRandom
 
 agent ElectoralCommitteeAgent {
 	 uses DefaultContextInteractions, Logging
 	 val candidates : Set<CandidateAgent> = Collections.newSetFromMap(new ConcurrentHashMap())  
 	 val voters : Set<VoterAgent> = Collections.newSetFromMap(new ConcurrentHashMap())
 	 val votes : Map<CandidateAgent, Integer> = new ConcurrentHashMap<CandidateAgent, Integer>()
-	 val random : Random = ThreadLocalRandom.current
+	 var random : Random 
 	 var janusManager : JanusManager
 	 var currentElectedCandidate : CandidateAgent
 	 var popularOpinionVotersPct : int = 20;
@@ -38,7 +37,8 @@ agent ElectoralCommitteeAgent {
 	 
 	 on Initialize [!occurrence.parameters.empty] {
 	 	janusManager = occurrence.parameters.get(0) as JanusManager
-	 	electionsInterval = occurrence.parameters.get(1) as Integer
+	 	random = occurrence.parameters.get(1) as Random
+	 	electionsInterval = occurrence.parameters.get(2) as Integer
 	 	janusManager.electoralCommittee(this)
 	 	println("---------- Electoral Committee Instantiated ----------")
 	 }

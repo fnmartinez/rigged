@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import ar.edu.itba.it.sma.rigged.sarl.support.Resource;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.Resource;
 
 public class Proposal {
 	

@@ -1,6 +1,6 @@
 var setDelay = 500;
 var main;
-var candidatesHistory = [],
+var candidatesHistory = new Array(),
 	voteIntentKeyAccessor = function(voteIntent) { return voteIntent.step; },
 	voteIntentValueAccessor = function(voteIntent) { return voteIntent.votes; },
 	voteIntentCategoryAccessor = function(candidateIntentHistory) { return candidateIntentHistory.candidate; },
@@ -13,12 +13,30 @@ var voteIntentChart = new LineChart("vote-intent",
 		voteIntentValuesAccessor,
 		BIG_CHART);
 
+var alignmentCategoryAccessor = function(alignment) { return alignment.politicalQuadrant; },
+	alignmentValuesAccessor = function(alignment) { return alignment.values; },
+	alignmentValueAccessor = function(alignmentValue) { return alignmentValue.socialMedian; },
+	alignmentKeyAccessor = function(alignmentValue) { return alignmentValue.economyMedian; };
+
+var votersAlignmentChart = new PlaneChart("voters-alignment",
+		alignmentKeyAccessor,
+		alignmentValueAccessor,
+		MEDIUM_CHART);
+var shapersAlignmentChart = new PlaneChart("shapers-alignment",
+		alignmentKeyAccessor,
+		alignmentValueAccessor,
+		MEDIUM_CHART);
+var candidatesAlignmentChart = new PlaneChart("candidates-alignment",
+		alignmentKeyAccessor,
+		alignmentValueAccessor,
+		MEDIUM_CHART);
+
 $(document).ready(function() {
 	main = function() {
 		$.ajax({
 			url: "http://localhost:8080/dashboard/status"
 		}).done(function(data) {
-			console.log(data);
+			//console.log(data);
 			updateAgentsStatus(data);
 			drawOverview();
 		}).always(function(data) {
@@ -26,13 +44,14 @@ $(document).ready(function() {
 		});
 	}
 	main();
-	drawVoters();
+	//drawVoters();
 });
 
 function drawOverview() {
 	drawVoteIntent();
-	drawOpinionShaperBias();
-	drawGlobalResources();
+	drawVotersAlignment();
+	drawOpinionShapresAlignment();
+	drawCandidatesAlignment();
 }
 
 function drawVoteIntent() {
@@ -41,6 +60,7 @@ function drawVoteIntent() {
 	}).done(function(response) {
 		if (voteIntentChart.categories.length == 0) {
 			var categories = [];
+
 			response.intents.forEach(function (candidateIntent, index, array) {
 				categories.push(candidateIntent.candidate);
 			});
@@ -64,28 +84,55 @@ function drawVoteIntent() {
 	});
 }
 
-function drawVoters() {
+function drawVotersAlignment() {
 	$.ajax({
-		url : "http://localhost:8080/dashboard/voters"
+		url: "http://localhost:8080/dashboard/voters-alignment"
 	}).done(function (response) {
-		var votersHtml = $("#voters");
-		response.voters.forEach(function (voter, index, array) {
-			var voterHtml = votersHtml.append("<tr></tr>");
-			voterHtml.append("<td>"+voter.name+"</td>");
-			var desireHtml = voterHtml.append("<td></td>");
-			voter.desire.forEach(function (desire, index, array) {
-				desireHtml.append("<span>"+desire.name+desire.f+desire.value+"</span><br/>")
-			});
-		});
+		if (votersAlignmentChart.categories.length == 0) {
+			var categories = [];
+			for (politicalQuadrant in response.agents) {
+				categories.push(politicalQuadrant);
+			}
+			votersAlignmentChart.init(categories, response.xdomain, response.ydomain);
+		}
+		for (politicalQuadrant in response.agents) {
+			votersAlignmentChart.draw(politicalQuadrant, response.agents[politicalQuadrant]);
+		}
 	});
 }
 
-function drawOpinionShaperBias() {
-
+function drawOpinionShapresAlignment() {
+	$.ajax({
+		url: "http://localhost:8080/dashboard/shapers-alignment"
+	}).done(function (response) {
+		if (shapersAlignmentChart.categories.length == 0) {
+			var categories = [];
+			for (politicalQuadrant in response.agents) {
+				categories.push(politicalQuadrant);
+			}
+			shapersAlignmentChart.init(categories, response.xdomain, response.ydomain);
+		}
+		for (politicalQuadrant in response.agents) {
+			shapersAlignmentChart.draw(politicalQuadrant, response.agents[politicalQuadrant]);
+		}
+	});
 }
 
-function drawGlobalResources() {
-
+function drawCandidatesAlignment() {
+	$.ajax({
+		url: "http://localhost:8080/dashboard/candidates-alignment"
+	}).done(function (response) {
+		if (candidatesAlignmentChart.categories.length == 0) {
+			var categories = [];
+			for (politicalQuadrant in response.agents) {
+				categories.push(politicalQuadrant);
+			}
+			candidatesAlignmentChart.init(categories, response.xdomain, response.ydomain);
+		}
+		for (politicalQuadrant in response.agents) {
+			candidatesAlignmentChart.draw(politicalQuadrant, response.agents[politicalQuadrant]);
+		}
+	});
 }
 
 function fetchCandidatesTendency() {
@@ -122,6 +169,7 @@ function updateAgentsStatus(data) {
 	updateElectionsStatus(data.onElections);
 	updateMonthCount(data.steps);
 	updateCurrentElectedCandidate(data.electedCandidate);
+	updateSeed(data.seed);
 }
 
 function updateEnvironmentStatus(environmentStatus) {
@@ -178,4 +226,8 @@ function updateCurrentElectedCandidate(electedCandidateName) {
 	} else {
 		$("#currentElectedCandidateBadge").text(electedCandidateName);
 	}
+}
+
+function updateSeed(seed) {
+	$("#seedBadge").text(seed);
 }

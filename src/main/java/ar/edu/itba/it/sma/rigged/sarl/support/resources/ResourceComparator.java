@@ -1,4 +1,4 @@
-package ar.edu.itba.it.sma.rigged.sarl.support;
+package ar.edu.itba.it.sma.rigged.sarl.support.resources;
 
 import java.util.Comparator;
 

@@ -6,17 +6,19 @@ var SMALL_CHART = {
 		bottom : 10,
 		left : 10,
 		right : 10
-	}
+	},
+	ticks : 3
 };
 var MEDIUM_CHART = {
 	width : 500,
 	height : 300,
 	margin : {
-			top : 15,
-			bottom : 15,
-			left : 15,
-			right : 15
-		}
+		top : 15,
+		bottom : 15,
+		left : 35,
+		right : 75
+	},
+	ticks : 5
 };
 var BIG_CHART = {
 	width : 640,
@@ -24,9 +26,10 @@ var BIG_CHART = {
 	margin : {
 		top : 20,
 		bottom : 20,
-		left : 20,
-		right : 80
-	}
+		left : 35,
+		right : 75
+	},
+	ticks : 10
 };
 
 var LineChart = function(domParentId, xFn, yFn, categoryAccessor, valuesAccessor, chartSize, animationTime = 500) {
@@ -65,11 +68,11 @@ LineChart.prototype.init = function(categories) {
 		.attr("width", this.chartSize.width)
 		.attr("height", this.chartSize.height);
 	parent.append("svg:g")
-		.attr("class","axis x-axis")
+		.attr("class","axis border-axis x-axis")
 		.attr("transform", "translate(0," + (this.chartSize.height - this.chartSize.margin.bottom) + ")")
 		.call(this.xAxis);
 	parent.append("svg:g")
-		.attr("class","axis y-axis")
+		.attr("class","axis border-axis y-axis")
 		.attr("transform", "translate(" + this.chartSize.margin.left + ",0)")
 		.call(this.yAxis);
 	this.chart = d3.select("." + this.chartName);
@@ -121,38 +124,71 @@ LineChart.prototype.getCategoryTextName = function(category) {
 	return this.chartName + "-" + category + "-text";
 }
 
+var PlaneChart = function(domParentId, xFn, yFn, chartSize, animationTime = 500) {
+	this.chart = null;
+	this.chartSize = chartSize;
+	this.parentId = domParentId;
+	this.xFn = xFn;
+	this.yFn = yFn;
+	this.animationTime = animationTime;
+	this.xScale = d3.scale.linear()
+			.range([this.chartSize.margin.left, this.chartSize.width - this.chartSize.margin.right]);
+	this.yScale = d3.scale.linear()
+			.range([this.chartSize.height - this.chartSize.margin.top, this.chartSize.margin.bottom]);
+	this.xAxis = d3.svg.axis()
+			.scale(this.xScale)
+			.orient("bottom")
+			.ticks(this.chartSize.ticks);
+	this.yAxis = d3.svg.axis()
+			.scale(this.yScale)
+			.orient("left")
+			.ticks(this.chartSize.ticks);
+	this.color = d3.scale.category10();
+	this.categories = [];
+	this.chartName = this.parentId + "-chart";
+}
 
-function drawPie(elementId, innerRadius, outerRadius, data, valueAccesor, keyAccesor) {
-	var pie = d3.layout.pie()
-				.value(valueAccesor);
-	var slices = pie(data);
+PlaneChart.prototype.init = function(categories, xDomain, yDomain) {
+	this.categories = categories;
+	this.xScale.domain([xDomain.min, xDomain.max]);
+	this.yScale.domain([yDomain.min, yDomain.max]);
+	var parent = d3.select("#" + this.parentId)
+		.append("svg")
+		.attr("class", this.chartName)
+		.attr("width", this.chartSize.width)
+		.attr("height", this.chartSize.height);
+	parent.append("svg:g")
+		.attr("class","axis middle-axis x-axis")
+		.attr("transform", "translate(0," + (this.chartSize.height / 2) + ")")
+		.call(this.xAxis);
+	parent.append("svg:g")
+		.attr("class","axis middle-axis y-axis")
+		.attr("transform", "translate(" + (this.chartSize.width / 2) + ",0)")
+		.call(this.yAxis);
+	this.chart = d3.select("." + this.chartName);
+	this.color.domain(d3.keys(this.categories));
+	this.legend = this.chart.append("g")
+			.attr("class", "legend")
+			.attr("transform", "translate(0,0)")
+			.call(d3.legend);
+}
 
-	var svg = d3.select("svg#" + elementId);
-	var arc = d3.svg.arc()
-				.innerRadius(innerRadius)
-				.outerRadius(outerRadius);
-	var color = d3.scale.category10();
-
-	var g = svg.append('g')
-				.attr('transform', 'translate(200, 50)')
-
-	g.selectAll('path.slice')
-		.data(slices)
-		.enter()
-		.append('path')
-		.transition()
-		.duration(100)
-		.attr('class', 'slice')
-		.attr('d', arc)
-		.attr('fill', function(d) {	return color(keyAccesor(d.data)); });
-
-	svg.append('g')
-	  .attr('class', 'legend')
-		.selectAll('text')
-		.data(slices)
-		  .enter()
-			.append('text')
-			  .text(function(d) { return '• ' + keyAccesor(d.data); })
-			  .attr('fill', function(d) { return color(keyAccesor(d.data)); })
-			  .attr('y', function(d, i) { return 20 * (i + 1); });
+PlaneChart.prototype.draw = function(category, data) {
+	var circles = this.chart.selectAll("circle." + category).data(data);
+	circles.transition()
+		.attr("r", 4)
+		.attr("cx", function(d) { return this.xScale(this.xFn(d)); })
+		.attr("cy", function(d) { return this.yScale(this.yFn(d)); });
+	var that = this;
+	circles.enter()
+		.append("svg:circle")
+		.attr("class", "category")
+		.attr("r", 4)
+		.attr("cx", function(d) { return that.xScale(that.xFn(d)); })
+		.attr("cy", function(d) { return that.yScale(that.yFn(d)); })
+		.attr("stroke", this.color(category))
+		.attr("stroke-width", 2)
+		.attr("fill", "none");
+	circles.exit()
+		.remove();
 }

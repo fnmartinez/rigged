@@ -1,17 +1,17 @@
 package ar.edu.itba.^it.sma.rigged.sarl.agents
 
-import ar.edu.itba.^it.sma.rigged.api.utils.JanusManager
-import ar.edu.itba.^it.sma.rigged.sarl.events.TimeEvent
-import ar.edu.itba.^it.sma.rigged.sarl.support.AgentStatus
-import ar.edu.itba.^it.sma.rigged.sarl.support.Resource
+import ar.edu.itba.it.sma.rigged.api.utils.JanusManager
+import ar.edu.itba.it.sma.rigged.sarl.events.TimeEvent
+import ar.edu.itba.it.sma.rigged.sarl.support.AgentStatus
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.Resource
 import io.sarl.core.AgentTask
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Initialize
 import io.sarl.core.Logging
 import io.sarl.core.Schedules
 import java.util.ArrayList
-import java.util.List
 import java.util.Collections
+import java.util.List
 import org.apache.commons.lang3.builder.ToStringBuilder
 
 agent EnvironmentAgent {
@@ -23,6 +23,7 @@ agent EnvironmentAgent {
 	var monthEvent : AgentTask
 	var onTimeSyncLock = false
 	var millisPerMonth = 1000
+	var step : int = 0
 	
 	on Initialize [!occurrence.parameters.empty] {
 		janusManager = occurrence.parameters.get(0) as JanusManager
@@ -37,7 +38,7 @@ agent EnvironmentAgent {
 		_onTimeSyncLock [|
 			monthEvent = every(millisPerMonth) [
 				if (defaultSpace.participants.size > 1) {
-					emit(new TimeEvent(1))
+					_changeStep(1)
 				}
 				status = AgentStatus.RUNNING	
 			]	
@@ -57,10 +58,15 @@ agent EnvironmentAgent {
 	}
 	
 	def step(step : int) : AgentStatus  {
+		_changeStep(step)
+		return status
+	}
+	
+	def _changeStep(step : int) {
 		_onTimeSyncLock [|
 			emit(new TimeEvent(step))
-		]
-		return status
+			this.step += 1;
+		] 
 	}
 	
 	def _onTimeSyncLock (exec : ()=>void) {
@@ -79,6 +85,10 @@ agent EnvironmentAgent {
 	
 	def getResources : List<Resource> {
 		return Collections.unmodifiableList(resources)
+	}
+	
+	def getStep : int {
+		return step;
 	}
 	
 	def toString : String {

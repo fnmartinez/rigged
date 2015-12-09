@@ -1,8 +1,10 @@
-package ar.edu.itba.it.sma.rigged.sarl.support;
+package ar.edu.itba.it.sma.rigged.sarl.support.desires;
 
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.Proposal;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.Resource;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.ResourceComparator;
 
 public class Desire {
 	

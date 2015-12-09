@@ -5,6 +5,7 @@ import ar.edu.itba.it.sma.rigged.sarl.events.SuscribeCandidateEvent
 import ar.edu.itba.it.sma.rigged.sarl.events.UnsuscribeCandidateEvent
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.Proposal
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.ProposalChangeStrategy
+import ar.edu.itba.it.sma.rigged.utils.PoliticalPlane
 import io.sarl.core.DefaultContextInteractions
 import io.sarl.core.Destroy
 import io.sarl.core.Initialize
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder
 
 agent CandidateAgent {
 	uses DefaultContextInteractions, Logging
+	var politicalQuadrant : PoliticalPlane
 	var proposalChangeStrategy : ProposalChangeStrategy
 	var initialProposal : Proposal
 	var proposal : Proposal
@@ -22,6 +24,7 @@ agent CandidateAgent {
 		name = occurrence.parameters.get(0) as String
 		proposal = initialProposal = occurrence.parameters.get(1) as Proposal
 		proposalChangeStrategy = occurrence.parameters.get(2) as ProposalChangeStrategy
+		politicalQuadrant = occurrence.parameters.get(3) as PoliticalPlane
 		emit(new SuscribeCandidateEvent(this))
 		println("Hi! I'm " + name + "!")
 	}
@@ -59,6 +62,10 @@ agent CandidateAgent {
 	
 	def getProposal : Proposal {
 		return proposal
+	}
+	
+	def getPoliticalQuadrant : PoliticalPlane {
+		return politicalQuadrant
 	}
 	
 	def toString : String {

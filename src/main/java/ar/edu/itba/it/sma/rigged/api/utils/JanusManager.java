@@ -7,10 +7,10 @@ import io.sarl.lang.core.Agent;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.stereotype.Component;
 
@@ -19,20 +19,27 @@ import ar.edu.itba.it.sma.rigged.sarl.agents.ElectoralCommitteeAgent;
 import ar.edu.itba.it.sma.rigged.sarl.agents.EnvironmentAgent;
 import ar.edu.itba.it.sma.rigged.sarl.agents.OpinionShaperAgent;
 import ar.edu.itba.it.sma.rigged.sarl.agents.VoterAgent;
-import ar.edu.itba.it.sma.rigged.sarl.support.Desire;
-import ar.edu.itba.it.sma.rigged.sarl.support.LessThanResourceComparator;
-import ar.edu.itba.it.sma.rigged.sarl.support.MoreThanResourceComparator;
-import ar.edu.itba.it.sma.rigged.sarl.support.Resource;
+import ar.edu.itba.it.sma.rigged.sarl.support.desires.Desire;
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.Proposal;
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.ProposalChangeStrategy;
+import ar.edu.itba.it.sma.rigged.sarl.support.proposals.strategies.CenteredProposalChangeStrategy;
 import ar.edu.itba.it.sma.rigged.sarl.support.proposals.strategies.RandomProposalChangeStrategy;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.InBetweenResourceComparator;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.Resource;
+import ar.edu.itba.it.sma.rigged.sarl.support.resources.ResourceComparator;
+import ar.edu.itba.it.sma.rigged.utils.ConfigurationManager;
+import ar.edu.itba.it.sma.rigged.utils.PoliticalPlane;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Module;
 
 @Component
 public class JanusManager {
 	
+	private static final String VOTER_NAME_TEMPLATE = "Voter-%s-%d";
+	private static final String OPINION_SHAPER_NAME_TEMPLATE = "OpinionShaper-%s-%d";
+	private static final String CANDIDATE_NAME_TEMPLATE = "Candidate-%s-%d";
 	private static final Class<? extends Agent> ENVIRONMENT_AGENT_TYPE = EnvironmentAgent.class;
 	private static final Class<? extends Agent> ELECTORAL_COMMITTEE_AGENT_TYPE = ElectoralCommitteeAgent.class;
 	private static final Class<? extends Agent> CANDIDATE_AGENT_TYPE = CandidateAgent.class;
@@ -41,93 +48,110 @@ public class JanusManager {
 	
 	private final Set<OpinionShaperAgent> shapers = new HashSet<OpinionShaperAgent>();
 	private final Kernel kernel;
-	private final Random random = ThreadLocalRandom.current();
+	private final long seed = System.currentTimeMillis();
+	private final Random random = new Random(seed);
 	private ElectoralCommitteeAgent electoralCommitteeAgent;
 	private EnvironmentAgent environmentAgent;
-	private int maxResourceQty = 100;
-	private int votersQty = 50;
-	private int opinionShapersQty = 3;
-	private int candidatesQty = 4;
-	private int millisPerMonth = 1000;
-	private int yearsPerElection = 1;
-	private int monthPerYear = 12;
-	private int opinionInterval = 2;
-	private double resourcesDispersion = 1.0;
 	
 	public JanusManager() throws Exception {
 		Class<? extends Module> dumbModule = null;
 		List<Resource> resources = generateResources();
-		kernel = Boot.startJanus(dumbModule, ENVIRONMENT_AGENT_TYPE, this, millisPerMonth, resources);
-		kernel.spawn(ELECTORAL_COMMITTEE_AGENT_TYPE, this, yearsPerElection * monthPerYear);
+		kernel = Boot.startJanus(dumbModule, ENVIRONMENT_AGENT_TYPE, this, ConfigurationManager.INSTANCE.getMillisPerMonth(), resources);
+		kernel.spawn(ELECTORAL_COMMITTEE_AGENT_TYPE, this, random, ConfigurationManager.INSTANCE.getElectionsInterval());
 		generateOpinionShapers();
 		generateVoters();
 		Thread.sleep(5000);
 		generateCandidates();
 	}
-
-	private void generateVoters() {
-		for (int i = 0; i < votersQty; i++) {
-			spawnVoter(String.format("Voter%d", i), getDesires());
+	
+	private void generateAgent(int totalQuantity, Map<PoliticalPlane, Float> proportions, Block block) {
+		for (PoliticalPlane pq : PoliticalPlane.values()) {
+			for (int q = 0; q < totalQuantity * proportions.get(pq); q++) {
+				block.execute(pq, q);
+			}
 		}
 	}
 
+	private void generateVoters() {
+		generateAgent(ConfigurationManager.INSTANCE.getVotersQty(), ConfigurationManager.INSTANCE.getVotersProportion(), new Block() {
+			
+			@Override
+			public void execute(PoliticalPlane pq, int q) {
+				List<Desire> desires = Lists.newArrayList();
+				ResourceComparator economicRC = new InBetweenResourceComparator((int)(pq.getEconomicDispersion() * random.nextGaussian() + pq.getEconomicMedian()), pq.getEconomicDispersion());
+				ResourceComparator socialRC = new InBetweenResourceComparator((int)(pq.getSocialDispersion() * random.nextGaussian() + pq.getSocialMedian()), pq.getSocialDispersion());
+				for (Resource r : environmentAgent.getResources()) {
+					if (r.getName().equals("economic")) {
+						desires.add(new Desire(r, economicRC));
+					} else {
+						desires.add(new Desire(r, socialRC));
+					}
+				}
+				spawnVoter(String.format(VOTER_NAME_TEMPLATE, pq.name(), q), random, pq, desires);				
+			}
+		});
+	}
+	
 	private void generateOpinionShapers() {
-		for (int i = 0; i < opinionShapersQty; i++) {
-			spawnOpinionShaper(String.format("OpinionShaper%d", i), opinionInterval * monthPerYear, getDesires());
-		}
+		generateAgent(ConfigurationManager.INSTANCE.getOpinionShapersQty(), ConfigurationManager.INSTANCE.getOpinionShapersProportion(), new Block() {
+			
+			@Override
+			public void execute(PoliticalPlane pq, int q) {
+				List<Desire> desires = Lists.newArrayList();
+				ResourceComparator economicRC = new InBetweenResourceComparator((int)(random.nextGaussian() + pq.getEconomicMedian()), pq.getEconomicDispersion());
+				ResourceComparator socialRC = new InBetweenResourceComparator((int)(random.nextGaussian() + pq.getSocialMedian()), pq.getSocialDispersion());
+				for (Resource r : environmentAgent.getResources()) {
+					if (r.getName().equals("economic")) {
+						desires.add(new Desire(r, economicRC));
+					} else {
+						desires.add(new Desire(r, socialRC));
+					}
+				}
+				spawnOpinionShaper(String.format(OPINION_SHAPER_NAME_TEMPLATE, pq.name(), q), ConfigurationManager.INSTANCE.getOpinionInterval(), pq, desires);				
+			}
+		});
 	}
 
 
 	private void generateCandidates() {
-		for (int i = 0; i < candidatesQty; i++) {
-			List<Resource> content = Lists.newArrayList();
-			for (Resource r : environmentAgent.getResources()) {
-				content.add(new Resource(r.getName(), random.nextInt(maxResourceQty)));
+		generateAgent(ConfigurationManager.INSTANCE.getCandidatesQty(), ConfigurationManager.INSTANCE.getCandidatesProportion(), new Block() {
+			@Override
+			public void execute(PoliticalPlane politicalQuadrant, int index) {
+				List<Resource> content = ImmutableList.of(
+						new Resource("social", getResourceQty(politicalQuadrant.getSocialMedian(), politicalQuadrant.getSocialDispersion())),
+						new Resource("economic", getResourceQty(politicalQuadrant.getEconomicMedian(), politicalQuadrant.getEconomicDispersion())));
+				Proposal p = new Proposal(content);
+				ProposalChangeStrategy pcs = index == 0 ?
+						new RandomProposalChangeStrategy(content, random, ConfigurationManager.INSTANCE.getResourceRangeMax()) :
+						new CenteredProposalChangeStrategy(p, random);
+				spawnCandidate(String.format(CANDIDATE_NAME_TEMPLATE, politicalQuadrant.name(), index), p, pcs, politicalQuadrant);
 			}
-			spawnCandidate(String.format("Candidate%d", i), new Proposal(content), getProposalChangeStrategy());
-		}
-	}
-
-	private RandomProposalChangeStrategy getProposalChangeStrategy() {
-		return new RandomProposalChangeStrategy(environmentAgent.getResources(), (int)(maxResourceQty)/2);
+		});
 	}
 
 	private List<Resource> generateResources() {
 		List<Resource> resources = new ArrayList<Resource>();
-		resources.add(new Resource("Economía", getResourceQty()));
-		resources.add(new Resource("Educación", getResourceQty()));
-		resources.add(new Resource("Salud", getResourceQty()));
-		resources.add(new Resource("Infraestrutura", getResourceQty()));	
+		resources.add(new Resource("social", getResourceQty(PoliticalPlane.UNDECIDED.getSocialMedian(), PoliticalPlane.UNDECIDED.getSocialDispersion())));
+		resources.add(new Resource("economic", getResourceQty(PoliticalPlane.UNDECIDED.getEconomicMedian(), PoliticalPlane.UNDECIDED.getEconomicDispersion())));
 		return resources;
 	}
 	
-	private int getResourceQty() {
-		return (int)((random.nextGaussian() + maxResourceQty/2) / resourcesDispersion);
+	private int getResourceQty(int median, int dispersion) {
+		return (int)((random.nextGaussian() + median) / dispersion);
 	}
 
-	private List<Desire> getDesires() {
-		List<Desire> desires = Lists.newArrayList();
-		for (Resource r : environmentAgent.getResources()) {
-			desires.add(new Desire(r,
-					random.nextBoolean() ? 
-							new MoreThanResourceComparator(random.nextInt(maxResourceQty)) :
-							new LessThanResourceComparator(random.nextInt(maxResourceQty))));
-		}
-		return desires;
-	}
-
-	public UUID spawnVoter(String voterName, List<Desire> desires) {
-		UUID uuid = kernel.spawn(VOTER_AGENT_TYPE, voterName, desires);
+	public UUID spawnVoter(String voterName, Random random, PoliticalPlane politicalPlane, List<Desire> desires) {
+		UUID uuid = kernel.spawn(VOTER_AGENT_TYPE, voterName, random, politicalPlane, desires);
 		return uuid;
 	}
 	
-	public UUID spawnCandidate(String candidateName, Proposal proposal, ProposalChangeStrategy proposalChangeStrategy) {
-		UUID uuid = kernel.spawn(CANDIDATE_AGENT_TYPE, candidateName, proposal, proposalChangeStrategy);
+	public UUID spawnCandidate(String candidateName, Proposal proposal, ProposalChangeStrategy proposalChangeStrategy, PoliticalPlane politicalQuadrant) {
+		UUID uuid = kernel.spawn(CANDIDATE_AGENT_TYPE, candidateName, proposal, proposalChangeStrategy, politicalQuadrant);
 		return uuid;
 	}
 	
-	private UUID spawnOpinionShaper(String opinionShaperName, int opinionInterval, List<Desire> desires) {
-		return kernel.spawn(OPINION_SHAPER_AGENT_TYPE, this, opinionShaperName, opinionInterval, desires);		
+	private UUID spawnOpinionShaper(String opinionShaperName, int opinionInterval, PoliticalPlane politicalPlane, List<Desire> desires) {
+		return kernel.spawn(OPINION_SHAPER_AGENT_TYPE, this, opinionShaperName, opinionInterval, politicalPlane, desires);		
 	}
 	
 	public void add(OpinionShaperAgent shaper) {
@@ -164,5 +188,19 @@ public class JanusManager {
 	
 	public Iterable<CandidateAgent> candidates() {
 		return this.electoralCommitteeAgent.getCandidates();
+	}
+	
+	public Iterable<OpinionShaperAgent> opinionShapers() {
+		return this.shapers;
+	}
+
+	public long randomSeed() {
+		return seed;
+	}
+	
+	private static interface Block {
+
+		void execute(PoliticalPlane politicalQuadrant, int index);
+		
 	}
 }

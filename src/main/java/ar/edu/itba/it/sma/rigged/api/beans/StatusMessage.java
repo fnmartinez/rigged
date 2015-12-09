@@ -10,13 +10,15 @@ public class StatusMessage {
 	private final CandidateAgent candidate;
 	private final int steps;
 	private final boolean onElections;
+	private final long seed;
 	
-	public StatusMessage(AgentStatus environmentStatus, AgentStatus electoralCommitteeStatus, CandidateAgent candidate, int steps, boolean onElections) {
+	public StatusMessage(AgentStatus environmentStatus, AgentStatus electoralCommitteeStatus, CandidateAgent candidate, int steps, boolean onElections, long seed) {
 		this.environmentStatus = environmentStatus;
 		this.electoralCommitteeStatus = electoralCommitteeStatus;
 		this.candidate = candidate;
 		this.steps = steps;
 		this.onElections = onElections;
+		this.seed = seed;
 	}
 	
 	public AgentStatus getEnvironmentStatus() {
@@ -37,5 +39,9 @@ public class StatusMessage {
 	
 	public String getElectedCandidate() {
 		return candidate == null ? null : candidate.getName();
+	}
+	
+	public long getSeed() {
+		return seed;
 	}
 }

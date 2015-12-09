@@ -1,12 +1,12 @@
-package ar.edu.itba.it.sma.rigged.sarl.support;
+package ar.edu.itba.it.sma.rigged.sarl.support.resources;
 
 
-public class MoreThanResourceComparator implements ResourceComparator {
+public class LessThanResourceComparator implements ResourceComparator {
 	
-	private final int min;
+	private final int max;
 	
-	public MoreThanResourceComparator(int min) {
-		this.min = min;
+	public LessThanResourceComparator(int max) {
+		this.max = max;
 	}
 
 	@Override
@@ -15,26 +15,24 @@ public class MoreThanResourceComparator implements ResourceComparator {
 	}
 
 	private int expectedHappiness(Resource proposedValue) {
-		return proposedValue.getValue() - min;
+		return max - proposedValue.getValue();
 	}
 	
 	private int currentHappiness(Resource actualValue) {
-		return actualValue.getValue() - min;
+		return max - actualValue.getValue();
 	}
-	
-	@Override
+
 	public String toString() {
-		return "MoreThan: " + min;
+		return "LessThan: " + max;
 	}
 
 	@Override
 	public String getTypeName() {
-		return " > ";
+		return " < ";
 	}
 
 	@Override
 	public int getValue() {
-		return min;
+		return max;
 	}
-
 }
